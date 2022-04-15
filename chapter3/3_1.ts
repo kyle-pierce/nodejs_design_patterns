@@ -1,6 +1,15 @@
 import { EventEmitter } from 'events';
 import { readFile } from 'fs';
 
+/*
+ * 3.1: a simple event
+ * 
+ * Modify the asynchronous FindRegex class so that it emits and event when the find process starts,
+ * passing the input file list as an argument.  
+ * 
+ * Hint: beware of Zalgo!
+ */
+
 class FindRegex extends EventEmitter {
     regex: string;
     files: string[];

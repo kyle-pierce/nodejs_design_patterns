@@ -1,5 +1,12 @@
 import { EventEmitter } from 'events';
 
+/*
+ * 3.3: a simple modification
+ * 
+ * Modify the function created in exercise 3.2 so that it emits a tick event immediately after
+ * the function is invoked.
+ */
+
 const ticker = (tickUntilMs: number, callback: (error: Error | null, numTicks: number) => any) => {
     const eventEmtter = new EventEmitter();
     const msBetweenTicks = 50;
