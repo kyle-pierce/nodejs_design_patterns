@@ -13,36 +13,26 @@ import { readFile, writeFile } from 'fs';
  * use rest parameters syntax (nodejsdp.link/rest-parameters).
  */
 
-type IteratorCallbackType = (err: Error, contents: Buffer) => any;
-
 export const concatFiles = (dst: string, callback: (err: Error) => any, src1: string, src2: string, ...additionalSrcs: string[]) => {
     const srcFiles = [src1, src2, ...additionalSrcs];
 
-    const iterate = (startIndex: number, callback: IteratorCallbackType) => {
+    const iterate = (startIndex: number, contentAccumulator: string, callback: (err: Error, content: string) => any) => {
         if (startIndex === srcFiles.length) {
-            return callback(null, null);
+            return callback(null, contentAccumulator);
         }
 
         readFile(srcFiles[startIndex], (err, contents) => {
             if (err) {
                 return callback(err, null);
             }
-            callback(null, contents);
-            iterate(startIndex + 1, callback);
+            iterate(startIndex + 1, contentAccumulator + contents, callback);
         });
     };
 
-    let allSrcFileContents = '';
-    iterate(0, (err, contents) => {
+    iterate(0, '', (err, contents) => {
         if (err) {
             return callback(err);
         }
-        allSrcFileContents += contents;
-    });
-
-    writeFile(dst, allSrcFileContents, err => {
-        if (err) {
-            return callback(err);
-        }
+        writeFile(dst, contents, callback);
     });
 }

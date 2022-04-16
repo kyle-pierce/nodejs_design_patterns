@@ -1,4 +1,4 @@
-import { accessSync, lstat, readdir } from 'fs';
+import { access, lstat, readdir } from 'fs';
 
 /*
  * 4.2: list files recursively
@@ -11,42 +11,35 @@ import { accessSync, lstat, readdir } from 'fs';
  */
 
 const listNestedFiles = (dirName: string, callback: (err: Error, files: string[]) => any) => {
-    // make sure given directory exists synchronously, since otherwise proceeding will cause errors
-    try {
-        accessSync(dirName);
-    } catch (err) {
-        return process.nextTick(() => callback(err, null));
-    }
-
-    const handleFile = (file: string, callback: (err: Error, filePath: string) => any) => {
-        callback(null, file);
+    const handleFile = (file: string, fileList: string[], callback: (err: Error, files: string[]) => any) => {
+        fileList.push(file);
         lstat(file, (err, fileStats) => {
             if (err) {
                 return callback(err, null);
             }
             if (fileStats.isDirectory) {
-                addFilesFrom(file, callback);
+                addFilesFrom(file, fileList, callback);
             }
         });
     }
 
-    const addFilesFrom = (subDirName: string, callback: (err: Error, filePath: string) => any) => {
+    const addFilesFrom = (subDirName: string, fileList: string[], callback: (err: Error, files: string[]) => any) => {
         readdir(subDirName, (err, files) => {
             if (err) {
                 return callback(err, null);
             }
-            files.forEach(file => handleFile(file, callback));
+            files.forEach(file => handleFile(file, fileList, callback));
         });
     }
 
-    const allFiles = [];
-    addFilesFrom(dirName, (err, filePath) => {
+    access(dirName, (err) => {
         if (err) {
             return callback(err, null);
         }
-        allFiles.push(filePath);
+        addFilesFrom(dirName, [], callback);
     });
 
-    // TODO: how do we know when all the files have been processed?  I don't think we want
-    //       to call the given callback with the allFiles list before then
+    // TODO: This is much closer!  I just need to figure out when to call the original callback with the list of
+    //       filenames.  I could iterate in order, which makes it easier, but I want to keep it concurrent
+    //       if I can.
 }
