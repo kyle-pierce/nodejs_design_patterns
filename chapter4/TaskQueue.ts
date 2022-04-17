@@ -17,6 +17,7 @@ export class TaskQueue extends EventEmitter {
     pushTask = (task: () => any) => {
         this.queue.push(task);
         process.nextTick(this.next.bind(this));
+        return this;
     }
 
     next = () => {

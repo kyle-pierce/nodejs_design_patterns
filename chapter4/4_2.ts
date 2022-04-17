@@ -1,4 +1,5 @@
 import { access, lstat, readdir } from 'fs';
+import { TaskQueue } from './TaskQueue';
 
 /*
  * 4.2: list files recursively
@@ -10,7 +11,9 @@ import { access, lstat, readdir } from 'fs';
  * My question: is there any file ordering requirement?  Not specified, so I guess no.
  */
 
-const listNestedFiles = (dirName: string, callback: (err: Error, files: string[]) => any) => {
+export const listNestedFiles = (dirName: string, callback: (err: Error, files: string[]) => any) => {
+    const taskQueue = new TaskQueue();
+
     const handleFile = (file: string, fileList: string[], callback: (err: Error, files: string[]) => any) => {
         fileList.push(file);
         lstat(file, (err, fileStats) => {
@@ -18,7 +21,7 @@ const listNestedFiles = (dirName: string, callback: (err: Error, files: string[]
                 return callback(err, null);
             }
             if (fileStats.isDirectory) {
-                addFilesFrom(file, fileList, callback);
+                taskQueue.pushTask(() => addFilesFrom(file, fileList, callback));
             }
         });
     }
@@ -36,10 +39,8 @@ const listNestedFiles = (dirName: string, callback: (err: Error, files: string[]
         if (err) {
             return callback(err, null);
         }
-        addFilesFrom(dirName, [], callback);
+        const allFiles = [];
+        taskQueue.pushTask(() => addFilesFrom(dirName, allFiles, callback))
+                 .on('empty', () => callback(null, allFiles));
     });
-
-    // TODO: This is much closer!  I just need to figure out when to call the original callback with the list of
-    //       filenames.  I could iterate in order, which makes it easier, but I want to keep it concurrent
-    //       if I can.
 }
